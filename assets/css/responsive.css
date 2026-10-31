@@ -1,0 +1,74 @@
+/* Responsive and mobile-friendly overrides, loaded after style.css. */
+
+html, body { overflow-x: hidden; }
+img, video, canvas { max-width: 100%; }
+
+/* Tables: stacked cards on phones/tablets (labels come from assets/js/responsive.js) */
+.card.overflow-auto, .table-responsive { -webkit-overflow-scrolling: touch; }
+@media (max-width: 991.98px) {
+  main table.table:not(.keep-table) { display: block; width: 100%; border: 0; }
+  main table.table:not(.keep-table) thead { display: none; }
+  main table.table:not(.keep-table) tbody { display: block; }
+  main table.table:not(.keep-table) tbody tr {
+    display: block; background: #fff; border: 1px solid #dee2e6 !important; border-radius: .75rem;
+    margin: 0 0 .85rem; padding: .25rem 0; box-shadow: 0 1px 3px rgba(0,0,0,.05); overflow: hidden;
+  }
+  main table.table:not(.keep-table) tbody tr[hidden] { display: none; }
+  main table.table:not(.keep-table) tbody td {
+    display: flex; flex-direction: column; align-items: flex-start; gap: .25rem;
+    width: 100%; border: 0 !important; border-bottom: 1px solid #f1f3f5 !important;
+    padding: .6rem 1rem; background: transparent !important; text-align: left !important; min-width: 0 !important;
+  }
+  main table.table:not(.keep-table) tbody td:last-child { border-bottom: 0 !important; }
+  main table.table:not(.keep-table) tbody td[data-label]::before {
+    content: attr(data-label); font-size: .68rem; font-weight: 700; letter-spacing: .05em;
+    text-transform: uppercase; color: #6c757d;
+  }
+  main table.table:not(.keep-table) tbody td[colspan] { align-items: center; text-align: center !important; }
+  main table.table:not(.keep-table) tbody td:first-child { border-left: 0 !important; border-top: 4px solid var(--req-accent, #adb5bd) !important; }
+  main table.table:not(.keep-table) td .d-inline-flex { justify-content: flex-start !important; }
+  .card.overflow-auto { overflow: visible !important; }
+  #reqTable .req-loc { min-width: 0; width: 100%; }
+}
+/* Page title rows with action buttons wrap instead of overflowing */
+.pagetitle.d-flex { flex-wrap: wrap; gap: .5rem; }
+.pagetitle h1 { font-size: 22px; }
+
+/* Header: keep dropdowns inside the screen */
+.header .notifications, .header .profile { max-width: calc(100vw - 1rem); }
+
+@media (max-width: 767.98px) {
+  #main { padding: 16px 10px; }
+  .card-body { padding-left: 14px; padding-right: 14px; }
+  .pagetitle .btn { white-space: nowrap; }
+
+  /* 16px inputs stop iOS from zooming in on focus */
+  .form-control, .form-select, .form-control-sm, .form-select-sm { font-size: 16px; }
+
+  /* Search/filter toolbars stack */
+  .input-group { flex-wrap: nowrap; }
+  .nav-tabs-custom { flex-wrap: nowrap; overflow-x: auto; white-space: nowrap; }
+  .nav-tabs-custom .nav-link { white-space: nowrap; }
+
+  /* Tap-friendly controls */
+  .btn { min-height: 38px; }
+  .btn-sm { min-height: 32px; }
+}
+
+/* Modals become full-screen sheets on phones */
+@media screen and (max-width: 575.98px) {
+  .modal-dialog { margin: 0; max-width: none; min-height: 100%; }
+  .modal-content { min-height: 100vh; border: 0; border-radius: 0; }
+  .modal-body { overflow-y: auto; }
+  .modal-footer { position: sticky; bottom: 0; background: #fff; z-index: 2; flex-wrap: wrap; }
+  .modal-footer > * { margin: 0; }
+  .modal-footer .btn { flex: 1 1 auto; }
+}
+
+/* Small phones */
+@media (max-width: 575.98px) {
+  .header { padding-left: 10px; }
+  .header .logo img { max-height: 32px; }
+  .dashboard .info-card h6 { font-size: 24px; }
+  .login .card { border-radius: .75rem; }
+}

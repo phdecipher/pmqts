@@ -1,6 +1,7 @@
 <?php
 require_once __DIR__ . '/../config/app.php';
 require_login();
+require_access('inventory');
 require_once __DIR__ . '/../config/db.php';
 
 $assets = $conn->query("SELECT id, asset_tag, qr_token, asset_name, category, location, status FROM tbl_inventory WHERE status <> 'Retired' ORDER BY asset_name");
@@ -20,6 +21,7 @@ $csrfToken = csrf_token();
   <link href="assets/vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
   <link href="assets/vendor/bootstrap-icons/bootstrap-icons.css" rel="stylesheet">
   <link href="assets/css/style.css" rel="stylesheet">
+  <link href="assets/css/responsive.css" rel="stylesheet">
   <style>
     .qr-workspace { display:grid; grid-template-columns:minmax(280px, .8fr) minmax(320px, 1.2fr); gap:1.25rem; }
     .equipment-label { background:#fff; border:1px solid #dce3eb; border-radius:16px; padding:28px; text-align:center; max-width:420px; margin:auto; }

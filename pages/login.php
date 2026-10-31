@@ -17,7 +17,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   } else {
     $username = trim($_POST['username'] ?? '');
     $password = $_POST['password'] ?? '';
-    $statement = $conn->prepare('SELECT id, username, email, password_hash, role FROM tbl_users WHERE (username = ? OR email = ?) AND is_active = 1 LIMIT 1');
+    $statement = $conn->prepare('SELECT id, full_name, username, email, password_hash, role FROM tbl_users WHERE (username = ? OR email = ?) AND is_active = 1 LIMIT 1');
     $statement->bind_param('ss', $username, $username);
     $statement->execute();
     $user = $statement->get_result()->fetch_assoc();
@@ -26,6 +26,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       session_regenerate_id(true);
       $_SESSION['user_id'] = (int) $user['id'];
       $_SESSION['username'] = $user['username'];
+    $_SESSION['full_name'] = $user['full_name'] !== '' ? $user['full_name'] : $user['username'];
       $_SESSION['user_role'] = $user['role'];
             $destination = $_SESSION['after_login'] ?? (APP_BASE_URL . '/pages/dashboard.php');
             unset($_SESSION['after_login']);
@@ -68,6 +69,7 @@ $csrfToken = csrf_token();
 
   <!-- Template Main CSS File -->
   <link href="assets/css/style.css" rel="stylesheet">
+  <link href="assets/css/responsive.css" rel="stylesheet">
 </head>
 
 <body>

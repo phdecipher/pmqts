@@ -49,12 +49,13 @@
       <li class="nav-item dropdown pe-3">
         <a class="nav-link nav-profile d-flex align-items-center pe-0" href="#" data-bs-toggle="dropdown">
           <img src="assets/img/kween.jpg" alt="Profile" class="rounded-circle">
-          <span class="d-none d-md-block dropdown-toggle ps-2">Mingyu</span>
+          <span class="d-none d-md-block dropdown-toggle ps-2"><?= h($_SESSION['full_name'] ?? '') ?></span>
         </a>
 
         <ul class="dropdown-menu dropdown-menu-end dropdown-menu-arrow profile">
           <li class="dropdown-header">
-            <h6>Mingyu</h6>
+            <h6><?= h($_SESSION['full_name'] ?? '') ?></h6>
+            <span><?= h(role_label(current_role())) ?></span>
           </li>
           <li><hr class="dropdown-divider"></li>
           <li>
@@ -65,7 +66,7 @@
           </li>
           <li><hr class="dropdown-divider"></li>
           <li>
-            <a class="dropdown-item d-flex align-items-center" href="#">
+            <a class="dropdown-item d-flex align-items-center" href="pages/logout.php">
               <i class="bi bi-box-arrow-right"></i>
               <span>Sign Out</span>
             </a>

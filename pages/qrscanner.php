@@ -35,6 +35,7 @@ $csrfToken = csrf_token();
 
   <!-- Template Main CSS File -->
   <link href="assets/css/style.css" rel="stylesheet">
+  <link href="assets/css/responsive.css" rel="stylesheet">
 
   <!-- QR Scanner Library -->
   <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>

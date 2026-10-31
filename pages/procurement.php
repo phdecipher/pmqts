@@ -1,6 +1,7 @@
 <?php
 require_once __DIR__ . '/../config/app.php';
 require_login();
+require_access('procurement');
 require_once __DIR__ . '/../config/db.php';
 
 $flash = take_flash();
@@ -31,7 +32,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       set_flash('Purchase request saved.');
     } elseif (in_array($action, ['approve', 'reject'], true) && $id) {
       $conn->begin_transaction();
-      $statement = $conn->prepare('SELECT item_name, status FROM tbl_procurement WHERE id = ? FOR UPDATE');
+        $statement = $conn->prepare('SELECT item_name, quantity, requisition_id, status FROM tbl_procurement WHERE id = ? FOR UPDATE');
       $statement->bind_param('i', $id);
       $statement->execute();
       $request = $statement->get_result()->fetch_assoc();
@@ -46,20 +47,44 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $statement->bind_param('si', $status, $id);
         $statement->execute();
 
-        $assetTag = 'AST-' . date('Y') . '-' . strtoupper(bin2hex(random_bytes(4)));
         $assetName = $request['item_name'];
         $category = 'Procured Item';
+        if ($request['requisition_id']) {
+          $reqStatement = $conn->prepare('SELECT category FROM tbl_requisition_lines WHERE requisition_id = ? AND item_name = ?');
+          $reqStatement->bind_param('is', $request['requisition_id'], $assetName);
+          $reqStatement->execute();
+          $category = $reqStatement->get_result()->fetch_assoc()['category'] ?? $category;
+        }
         $location = 'Storage Room';
-                $inventoryStatus = 'Active';
+        $inventoryStatus = 'Active';
+        $units = max(1, (int) $request['quantity']);
+        // Countable items are restocked on their existing record instead of creating one row per unit.
+        $countable = $conn->prepare("UPDATE tbl_inventory SET quantity = COALESCE(quantity, 0) + ? WHERE asset_name = ? AND is_countable = 1 AND status = 'Active' ORDER BY id LIMIT 1");
+        $countable->bind_param('is', $units, $assetName);
+        $countable->execute();
+        $restocked = $countable->affected_rows > 0;
         $statement = $conn->prepare('INSERT INTO tbl_inventory (asset_tag, asset_name, category, location, status) VALUES (?, ?, ?, ?, ?)');
-                $statement->bind_param('sssss', $assetTag, $assetName, $category, $location, $inventoryStatus);
-        $statement->execute();
+        for ($unit = 0; !$restocked && $unit < $units; $unit++) {
+          $assetTag = 'AST-' . date('Y') . '-' . strtoupper(bin2hex(random_bytes(4)));
+          $statement->bind_param('sssss', $assetTag, $assetName, $category, $location, $inventoryStatus);
+          $statement->execute();
+        }
+        if ($request['requisition_id']) {
+          $statement = $conn->prepare("UPDATE tbl_requisitions SET status = 'Pending Custodian' WHERE id = ? AND status = 'Awaiting Procurement' AND NOT EXISTS (SELECT 1 FROM tbl_procurement p WHERE p.requisition_id = ? AND p.status = 'Pending Approval')");
+          $statement->bind_param('ii', $request['requisition_id'], $request['requisition_id']);
+          $statement->execute();
+        }
         set_flash('Request approved and the item was added to inventory.');
       } else {
         $status = 'Rejected';
         $statement = $conn->prepare("UPDATE tbl_procurement SET status = ? WHERE id = ? AND status = 'Pending Approval'");
         $statement->bind_param('si', $status, $id);
         $statement->execute();
+        if ($request['requisition_id']) {
+          $statement = $conn->prepare("UPDATE tbl_requisitions SET status = 'Rejected', review_note = 'Procurement request was rejected.' WHERE id = ? AND status = 'Awaiting Procurement'");
+          $statement->bind_param('i', $request['requisition_id']);
+          $statement->execute();
+        }
         set_flash('Request rejected.');
       }
 
@@ -86,7 +111,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 
 $inventory_items = $conn->query('SELECT asset_name FROM tbl_inventory ORDER BY id DESC');
-$requests = $conn->query('SELECT id, pr_number, item_name, source_trigger, estimated_cost, status FROM tbl_procurement ORDER BY id DESC');
+$requests = $conn->query('SELECT id, pr_number, item_name, quantity, source_trigger, estimated_cost, status FROM tbl_procurement ORDER BY id DESC');
 $csrfToken = csrf_token();
 ?>
 <!DOCTYPE html>
@@ -107,6 +132,8 @@ $csrfToken = csrf_token();
   <link href="assets/vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
   <link href="assets/vendor/bootstrap-icons/bootstrap-icons.css" rel="stylesheet">
   <link href="assets/css/style.css" rel="stylesheet">
+  <link href="assets/css/responsive.css" rel="stylesheet">
+  <script src="assets/js/responsive.js" defer></script>
 </head>
 
 <body>
@@ -161,7 +188,7 @@ $csrfToken = csrf_token();
                   <?php while ($row = $requests->fetch_assoc()): ?>
                     <tr>
                       <td class="fw-bold"><?php echo htmlspecialchars($row['pr_number']); ?></td>
-                      <td><?php echo htmlspecialchars($row['item_name']); ?></td>
+                      <td><?php echo htmlspecialchars($row['item_name']); ?><?php if ((int) $row['quantity'] > 1): ?> <span class="text-muted">× <?= (int) $row['quantity'] ?></span><?php endif; ?></td>
                       <td>
                         <span class="badge <?php echo ($row['source_trigger'] == 'AI Recommendation') ? 'bg-info text-dark' : 'bg-secondary'; ?>">
                           <?php echo htmlspecialchars($row['source_trigger']); ?>
@@ -262,6 +289,7 @@ $csrfToken = csrf_token();
   <script src="assets/vendor/tinymce/tinymce.min.js"></script>
   <script src="assets/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
   <script src="assets/js/main.js"></script>
+  <script src="assets/js/table-sort.js"></script>
 
 </body>
 </html>
